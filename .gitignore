@@ -2,3 +2,4 @@
 databases/
 rvos/src/__pycache__/
 rvos/src/misc/__pycache__/
+*.pyc

@@ -1,2 +1,3 @@
 # Ignore databases directory
 databases/
+rvos/src/__pycache__/

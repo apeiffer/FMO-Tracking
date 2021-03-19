@@ -1,0 +1,10 @@
+scipy
+imageio
+scikit_image
+numpy
+opencv_python
+cairosvg
+colour
+h5py
+scikit-image
+geopatterns

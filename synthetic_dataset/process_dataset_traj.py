@@ -26,6 +26,8 @@ def parse_args():
     parser.add_argument("--fg_path", required=True)
     parser.add_argument("--dataset_path", required=True)
     parser.add_argument("--dataset_size", type=int, required=True)
+    parser.add_argument("--sequence_len", type=int, required=True)
+
 
     return parser.parse_args()
 
@@ -44,12 +46,6 @@ def main():
     ti = 0
 
     compression_type = None
-    use_hdf5 = 'hdf5' in args.dataset_path
-    if use_hdf5:
-        if ti == 0 and os.path.exists(args.dataset_path):
-            # TODO ask for confirmation to delete old file
-            os.remove(args.dataset_path)
-        output_file = h5py.File(args.dataset_path)
 
     while ti < (args.dataset_size):
         print(ti)
@@ -92,112 +88,104 @@ def main():
         M3 = np.repeat(M[:, :, np.newaxis], 3, axis=2)
         FM = F*M3
 
-        ## Generate random trajectories
-        H = np.zeros(B.shape[0:2])
-        rind = random.randint(0,9)
-        tlen = random.uniform(1.5,9.0)*rad
-        start = [random.randint(0, H.shape[0]-1), random.randint(0, H.shape[1]-1)]
-        towrite = np.zeros([2,4])
-        towrite[:,0] = start
-        if rind == 0:
-            ## generate broken line
-            prc = random.uniform(0.15,0.85)
-            ori0 = []
-            for pr1 in [prc, 1-prc]:
-                while True:
-                    ori = random.uniform(0,2*math.pi)
-                    if ori0 == []:
+        seq = 0
+        while seq < args.sequence_len:
+            print("%d_%d" % (ti, seq))
+            ## Generate random trajectories
+            H = np.zeros(B.shape[0:2])
+            rind = random.randint(0,9)
+            tlen = random.uniform(1.5,9.0)*rad
+            if seq == 0:
+                start = [random.randint(0, H.shape[0]-1), random.randint(0, H.shape[1]-1)]
+            else:
+                start = end  # start from endpoint of previous frame, should probably add some noise eventually
+            towrite = np.zeros([2,4])
+            towrite[:,0] = start
+            if rind == 0:
+                ## generate broken line
+                prc = random.uniform(0.15,0.85)
+                ori0 = []
+                for pr1 in [prc, 1-prc]:
+                    while True:
+                        ori = random.uniform(0,2*math.pi)
+                        if ori0 == []:
+                            break
+                        delta = np.mod(ori - ori0 + 3*math.pi, 2*math.pi) - math.pi
+                        if np.abs(delta) < math.pi/6 or np.abs(delta) > 5*math.pi/6: ## if < 30 or > 150 degrees
+                            continue
                         break
-                    delta = np.mod(ori - ori0 + 3*math.pi, 2*math.pi) - math.pi
-                    if np.abs(delta) < math.pi/6 or np.abs(delta) > 5*math.pi/6: ## if < 30 or > 150 degrees
-                        continue
-                    break
 
-                end = [round(start[0] + math.sin(ori)*tlen*pr1), round(start[1] + math.cos(ori)*tlen*pr1)]
+                    end = [round(start[0] + math.sin(ori)*tlen*pr1), round(start[1] + math.cos(ori)*tlen*pr1)]
+                    rr, cc, val = line_aa(start[0], start[1], end[0], end[1])
+                    valid = np.logical_and(np.logical_and(rr < H.shape[0], cc < H.shape[1]), np.logical_and(rr > 0, cc > 0))
+                    rr = rr[valid]
+                    cc = cc[valid]
+                    val = val[valid]
+                    H[rr, cc] = val   
+                    if ori0 == []:
+                        towrite[:,1] = np.array(end) - np.array(start) 
+                    else:
+                        towrite[:,3] = np.array(end) - np.array(start) 
+
+                    start = end
+                    ori0 = ori
+            elif rind == 1:
+                ## generate parabola
+                ori = random.uniform(0,2*math.pi)
+                end = [round(start[0] + math.sin(ori)*tlen), round(start[1] + math.cos(ori)*tlen)]
+                towrite[:,1] = np.array(end) - np.array(start) 
+                towrite[:,2] = [random.uniform(10.0,20.0), random.uniform(10.0,20.0)] 
+                H = renderTraj(towrite, H) 
+            else:
+                ori = random.uniform(0,2*math.pi)
+                end = [round(start[0] + math.sin(ori)*tlen), round(start[1] + math.cos(ori)*tlen)]
                 rr, cc, val = line_aa(start[0], start[1], end[0], end[1])
                 valid = np.logical_and(np.logical_and(rr < H.shape[0], cc < H.shape[1]), np.logical_and(rr > 0, cc > 0))
                 rr = rr[valid]
                 cc = cc[valid]
                 val = val[valid]
-                H[rr, cc] = val   
-                if ori0 == []:
-                    towrite[:,1] = np.array(end) - np.array(start) 
-                else:
-                    towrite[:,3] = np.array(end) - np.array(start) 
+                H[rr, cc] = val    
+                towrite[:,1] = np.array(end) - np.array(start) 
 
-                start = end
-                ori0 = ori
-        elif rind == 1:
-            ## generate parabola
-            ori = random.uniform(0,2*math.pi)
-            end = [round(start[0] + math.sin(ori)*tlen), round(start[1] + math.cos(ori)*tlen)]
-            towrite[:,1] = np.array(end) - np.array(start) 
-            towrite[:,2] = [random.uniform(10.0,20.0), random.uniform(10.0,20.0)] 
-            H = renderTraj(towrite, H) 
-        else:
-            ori = random.uniform(0,2*math.pi)
-            end = [round(start[0] + math.sin(ori)*tlen), round(start[1] + math.cos(ori)*tlen)]
-            rr, cc, val = line_aa(start[0], start[1], end[0], end[1])
-            valid = np.logical_and(np.logical_and(rr < H.shape[0], cc < H.shape[1]), np.logical_and(rr > 0, cc > 0))
-            rr = rr[valid]
-            cc = cc[valid]
-            val = val[valid]
-            H[rr, cc] = val    
-            towrite[:,1] = np.array(end) - np.array(start) 
-
-        if np.sum(H) < tlen:
-            continue
-        SEGMASK = psf_to_full_mask(H, M)
-        H = H/np.sum(H)
-        ########
+            if np.sum(H) < tlen:
+                continue
+            SEGMASK = psf_to_full_mask(H, M)
+            H = H/np.sum(H)
+            ########
 
 
-        HM = signal.fftconvolve(H, M, mode='same')
-        HM3 = np.repeat(HM[:, :, np.newaxis], 3, axis=2)
-        HF = np.zeros(B.shape)
-        for kk in range(3):
-            HF[:,:,kk] = signal.fftconvolve(H, FM[:,:,kk], mode='same')
+            HM = signal.fftconvolve(H, M, mode='same')
+            HM3 = np.repeat(HM[:, :, np.newaxis], 3, axis=2)
+            HF = np.zeros(B.shape)
+            for kk in range(3):
+                HF[:,:,kk] = signal.fftconvolve(H, FM[:,:,kk], mode='same')
 
-        im = B*(1-HM3) + HF
+            im = B*(1-HM3) + HF
 
-        TH = np.zeros(B.shape[0:2])
-        TH[round(TH.shape[0]/2),round(TH.shape[1]/2)] = 1
-        M = signal.fftconvolve(TH, M, mode='same')
-        Fsave = np.zeros(B.shape)
-        for kk in range(3):
-            Fsave[:,:,kk] = signal.fftconvolve(TH, FM[:,:,kk], mode='same')
+            TH = np.zeros(B.shape[0:2])
+            TH[round(TH.shape[0]/2),round(TH.shape[1]/2)] = 1
+            M = signal.fftconvolve(TH, M, mode='same')
+            Fsave = np.zeros(B.shape)
+            for kk in range(3):
+                Fsave[:,:,kk] = signal.fftconvolve(TH, FM[:,:,kk], mode='same')
 
-        # imshow(im)
-        # pdb.set_trace()
-        fname = "%08d_" % (ti)
-        if use_hdf5:
-            output_file.create_group(fname)
-            if generate_inputs:
-                X, Y = get_data_processed(im, BMED, M, H/np.max(H), max_shape)
-                output_file[fname].create_dataset('X', data=X, compression=compression_type)
-                output_file[fname].create_dataset('Y', data=Y, compression=compression_type)
-            else:
-                output_file[fname].create_dataset('im', data=(255*im).astype(np.uint8), compression=compression_type)
-                output_file[fname].create_dataset('bgr', data=(255*BMED).astype(np.uint8), compression=compression_type)
-                output_file[fname].create_dataset('psf', data=(255*(H/np.max(H))).astype(np.uint8), compression=compression_type)
-                output_file[fname].create_dataset('segmask', data=(255*(SEGMASK/np.max(SEGMASK))).astype(np.uint8), compression=compression_type)
-                output_file[fname].create_dataset('F', data=(255*Fsave).astype(np.uint8), compression=compression_type)
-                output_file[fname].create_dataset('M', data=(255*M).astype(np.uint8), compression=compression_type)
-                output_file[fname].create_dataset('traj', data=towrite, compression=compression_type)
-        else:
+            # imshow(im)
+            # pdb.set_trace()
+            fname = "%08d_%08d_" % (ti, seq)
+            # if seq == 0:
+            #     imageio.imwrite(join(args.dataset_path,fname+"bgr.png"), (255*BMED).astype(np.uint8))
+            #     imageio.imwrite(join(args.dataset_path,fname+"F.png"), (255*Fsave).astype(np.uint8))
+            #     imageio.imwrite(join(args.dataset_path,fname+"M.png"), (255*M).astype(np.uint8))
             imageio.imwrite(join(args.dataset_path,fname+"im.png"), (255*im).astype(np.uint8))
-            imageio.imwrite(join(args.dataset_path,fname+"bgr.png"), (255*BMED).astype(np.uint8))
             imageio.imwrite(join(args.dataset_path,fname+"psf.png"), (255*(H/np.max(H))).astype(np.uint8))
             imageio.imwrite(join(args.dataset_path,fname+"segmask.png"), (255*(SEGMASK/np.max(SEGMASK))).astype(np.uint8))
-            imageio.imwrite(join(args.dataset_path,fname+"F.png"), (255*Fsave).astype(np.uint8))
-            imageio.imwrite(join(args.dataset_path,fname+"M.png"), (255*M).astype(np.uint8))
             
             with open(join(args.dataset_path,fname+"traj.txt"), 'w') as fff:
                 for k1 in range(towrite.shape[0]):
                     for k2 in range(towrite.shape[1]):
                         fff.write('%.1f ' % towrite[k1,k2])
                     fff.write('\n')
-
+            seq += 1
         ti = ti + 1
 
 def get_data_processed(im, bgr, M, psf, max_shape):

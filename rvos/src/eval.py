@@ -162,7 +162,7 @@ class Evaluate():
                     if args.dataset == 'youtube':
                         num_instances = len(data['videos'][seq_name[0]]['objects'])
                     else:
-                        num_instances = int(torch.sum(sw_mask.data).data.cpu().numpy())
+                        num_instances = 1 #int(torch.sum(sw_mask.data).data.cpu().numpy())
 
                     x_tmp = x.data.cpu().numpy()
                     height = x_tmp.shape[-2]
@@ -189,8 +189,7 @@ class Evaluate():
                         plt.imshow(frame_img)
 
                         for t in range(num_instances):
-                            
-                            mask_pred = (torch.squeeze(outs[0][0,t,:])).cpu().numpy()
+                            mask_pred = (torch.squeeze(outs[0,t,:])).cpu().numpy()
                             mask_pred = np.reshape(mask_pred, (height, width))
                             ax = plt.gca()
                             tmp_img = np.ones((mask_pred.shape[0], mask_pred.shape[1], 3))

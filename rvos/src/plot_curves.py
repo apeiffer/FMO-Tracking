@@ -36,7 +36,7 @@ def plot_curves_parser(txtfile, multi = True):
 
             if multi:
 
-                total_loss, iou_loss, stop_loss = extract_losses(line)
+                total_loss, iou_loss = extract_losses(line)
                 total_loss = float(total_loss.rstrip())
                 iou_loss = float(iou_loss.rstrip())
             else:

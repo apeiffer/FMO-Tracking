@@ -68,7 +68,7 @@ class DAVISLoader(MyDataset):
     self.transform = transform
     self.target_transform = target_transform
     self.split = split
-    self.inputRes = inputRes
+    self.inputRes = cfg.INPUT_RESOLUTION
     self.video_mode = video_mode
     self.max_seq_len = args.gt_maxseqlen
     self.dataset = args.dataset

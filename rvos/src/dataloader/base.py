@@ -66,7 +66,7 @@ class BaseLoader(ImageCollection):
         key_db = osp.basename(path)
         with lmdb_env.begin() as txn:
             _files_vec = txn.get(key_db.encode()).decode().split('|')
-            _files = [bytes(osp.join(path, f).encode()) for f in _files_vec]
+            _files = [osp.join(path, f) for f in _files_vec]
         super(BaseLoader, self).__init__(_files, load_func=load_func)
     else:  
         super(BaseLoader, self).__init__(

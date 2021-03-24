@@ -34,16 +34,7 @@ class Evaluate():
 
         image_transforms = transforms.Compose([to_tensor,normalize])
         
-        if args.dataset == 'davis2017':
-            dataset = get_dataset(args,
-                                split=self.split,
-                                image_transforms=image_transforms,
-                                target_transforms=None,
-                                augment=args.augment and self.split == 'train',
-                                inputRes = (240,427),
-                                video_mode = True,
-                                use_prev_mask = False)
-        else: #args.dataset == 'youtube'
+        if args.dataset == 'youtube':
             dataset = get_dataset(args,
                                 split=self.split,
                                 image_transforms=image_transforms,
@@ -52,7 +43,15 @@ class Evaluate():
                                 inputRes = (256, 448),
                                 video_mode = True,
                                 use_prev_mask = False)
-
+        else:
+            dataset = get_dataset(args,
+                                split=self.split,
+                                image_transforms=image_transforms,
+                                target_transforms=None,
+                                augment=args.augment and self.split == 'train',
+                                video_mode = True,
+                                use_prev_mask = False)
+        
         self.loader = data.DataLoader(dataset, batch_size=args.batch_size,
                                          shuffle=False,
                                          num_workers=args.num_workers,
@@ -320,9 +319,9 @@ if __name__ == "__main__":
     else:
         torch.manual_seed(args.seed)
 
-    if not args.log_term:
-        print ("Eval logs will be saved to:", os.path.join('../models',args.model_name, 'eval.log'))
-        sys.stdout = open(os.path.join('../models',args.model_name, 'eval.log'), 'w')
+    # if not args.log_term:
+    #     print ("Eval logs will be saved to:", os.path.join('../models',args.model_name, 'eval.log'))
+    #     sys.stdout = open(os.path.join('../models',args.model_name, 'eval.log'), 'w')
 
     E = Evaluate(args)
     E.run_eval()

@@ -40,22 +40,21 @@ def init_dataloaders(args):
         image_transforms = transforms.Compose([to_tensor, normalize])
 
                               
-        if args.dataset == 'davis2017':
-            dataset = get_dataset(args,
-                                split=split,
-                                image_transforms=image_transforms,
-                                target_transforms=None,
-                                augment=args.augment and split == 'train',
-                                inputRes = (240,427),
-                                video_mode = True,
-                                use_prev_mask = False)
-        else: #args.dataset == 'youtube'
+        if args.dataset == 'youtube':
             dataset = get_dataset(args,
                                 split=split,
                                 image_transforms=image_transforms,
                                 target_transforms=None,
                                 augment=args.augment and split == 'train',
                                 inputRes = (256,448),
+                                video_mode = True,
+                                use_prev_mask = False)
+        else:
+            dataset = get_dataset(args,
+                                split=split,
+                                image_transforms=image_transforms,
+                                target_transforms=None,
+                                augment=args.augment and split == 'train',
                                 video_mode = True,
                                 use_prev_mask = False)
 

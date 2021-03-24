@@ -43,6 +43,7 @@ __C.RESOLUTION="480p"
 # Dataset year: ("2016","2017")
 __C.YEAR ="2017"
 
+
 __C.PHASE = phase.VAL
 
 # Multiobject evaluation (Set to False only when evaluating DAVIS 2016)
@@ -52,13 +53,28 @@ __C.MULTIOBJECT = True
 __C.PATH.ROOT = osp.abspath('../../rvos/')
 
 # Data folder
-__C.PATH.DATA = osp.abspath('../../databases/DAVIS2017/')
+# __C.PATH.DATA = osp.abspath('../../databases/DAVIS2017/')  # CHANGE THIS FOR NEW DATASET!!!!!!
+__C.PATH.DATA = osp.abspath('../../databases/synthetic1_resized/')
+# __C.PATH.DATA = osp.abspath('../../databases/FMOv2/')
+
 
 # Path to input images
-__C.PATH.SEQUENCES = osp.join(__C.PATH.DATA,"JPEGImages",__C.RESOLUTION)
+# __C.PATH.SEQUENCES = osp.join(__C.PATH.DATA,"JPEGImages",__C.RESOLUTION)  # CHANGE THIS FOR NEW DATASET!!!!!!
+__C.PATH.SEQUENCES = osp.join(__C.PATH.DATA,"JPEGImages")
+
+
 
 # Path to annotations
-__C.PATH.ANNOTATIONS = osp.join(__C.PATH.DATA,"Annotations",__C.RESOLUTION)
+# __C.PATH.ANNOTATIONS = osp.join(__C.PATH.DATA,"Annotations",__C.RESOLUTION)   # CHANGE THIS FOR NEW DATASET!!!!!!
+__C.PATH.ANNOTATIONS = osp.join(__C.PATH.DATA,"Annotations")
+
+
+# __C.INPUT_RESOLUTION = (240,427)  # CHANGE THIS FOR NEW DATASET!!!!!!
+# __C.INPUT_RESOLUTION = (1280,1720)  # synthetic
+__C.INPUT_RESOLUTION = (320,430)  # synthetic_resized
+# __C.INPUT_RESOLUTION = (1080,1920)  # FMOv2
+
+
 
 # Color palette
 __C.PATH.PALETTE = osp.abspath(osp.join(__C.PATH.ROOT, 'src/dataloader/palette.txt'))
@@ -67,7 +83,11 @@ __C.PATH.PALETTE = osp.abspath(osp.join(__C.PATH.ROOT, 'src/dataloader/palette.t
 __C.FILES = edict()
 
 # Path to property file, holding information on evaluation sequences.
-__C.FILES.DB_INFO = osp.abspath(osp.join(__C.PATH.ROOT,"src/dataloader/db_info.yaml"))
+# __C.FILES.DB_INFO = osp.abspath(osp.join(__C.PATH.ROOT,"src/dataloader/db_info.yaml"))   # CHANGE THIS FOR NEW DATASET!!!!!!
+__C.FILES.DB_INFO = osp.abspath(osp.join(__C.PATH.ROOT,"src/dataloader/synthetic1_data.yaml"))   # CHANGE THIS FOR NEW DATASET!!!!!!
+# __C.FILES.DB_INFO = osp.abspath(osp.join(__C.PATH.ROOT,"src/dataloader/fmov2_data.yaml"))   # CHANGE THIS FOR NEW DATASET!!!!!!
+
+
 
 # Measures and Statistics
 __C.EVAL = edict()

@@ -33,7 +33,7 @@ def parse_args():
 
 
 def main():
-    random.seed(3524)
+    # random.seed(3524)
     max_shape = [256, 512]
     generate_inputs = True
 
@@ -98,7 +98,7 @@ def main():
             if seq == 0:
                 start = [random.randint(0, H.shape[0]-1), random.randint(0, H.shape[1]-1)]
             else:
-                start = end  # start from endpoint of previous frame, should probably add some noise eventually
+                start = prev_end  # start from endpoint of previous frame, should probably add some noise eventually
             towrite = np.zeros([2,4])
             towrite[:,0] = start
             if rind == 0:
@@ -149,6 +149,7 @@ def main():
 
             if np.sum(H) < tlen:
                 continue
+            prev_end = end
             SEGMASK = psf_to_full_mask(H, M)
             H = H/np.sum(H)
             ########

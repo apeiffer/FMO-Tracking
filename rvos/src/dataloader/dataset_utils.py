@@ -6,12 +6,10 @@ import random
 def get_dataset(args, split, image_transforms = None, target_transforms = None, augment = False,inputRes = None, video_mode = True, use_prev_mask = False):
 
 
-    if args.dataset =='davis2017':
-        from .davis2017 import DAVISLoader as MyChosenDataset
-    elif args.dataset == 'youtube':
+    if args.dataset == 'youtube':
         from .youtubeVOS import YoutubeVOSLoader as MyChosenDataset
-    
-    
+    else:
+        from .davis2017 import DAVISLoader as MyChosenDataset
 
 
     dataset = MyChosenDataset(args,

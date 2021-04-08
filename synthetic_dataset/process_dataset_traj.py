@@ -41,7 +41,7 @@ def main():
 
     fgs = [f for f in listdir(args.fg_path) if isfile(join(args.fg_path, f))]
     videos = [f for f in listdir(args.bg_path) if isdir(join(args.bg_path, f))]
-    bgs = [glob.glob(join(args.bg_path,f,'color','*.jpg')) for f in videos]
+    bgs = [sorted(glob.glob(join(args.bg_path,f,'color','*.jpg'))) for f in videos]
 
     ti = 0
 
@@ -52,33 +52,15 @@ def main():
         si = random.randint(0,len(videos)-1)
         vid = videos[si]
         frms = bgs[si]
-        bg = frms[random.randint(0,len(frms)-1)]
+        start_frame = random.randint(3,len(frms)-1-args.sequence_len)   # first frame, start at 3 to fix frmi issue
         fg = fgs[random.randint(0,len(fgs)-1)]
-        
-        frmi = int(bg[-12:-4])
-        if frmi < 3:
-            continue
-
 
         F = cv2.imread(join(args.fg_path,fg))/255
-        B = cv2.imread(bg)/255
 
         shp = np.mod(F.shape,100)
-        if np.min(shp[:2]) < 20:
+        if np.min(shp[:2]) < 4: # changing this from 20 to 4 to allow smaller FMOs
             continue
         F = skimage.transform.resize(F, shp, order=3)
-
-
-        bg0 = bg[:-12]+str(frmi-1).zfill(8) +bg[-4:]
-        bg00 = bg[:-12]+str(frmi-2).zfill(8) +bg[-4:]
-        B0 = cv2.imread(bg0)/255
-        B00 = cv2.imread(bg00)/255
-
-        BC = np.zeros([B.shape[0],B.shape[1],3,3])
-        BC[:,:,:,0] = B
-        BC[:,:,:,1] = B0
-        BC[:,:,:,2] = B00
-        BMED = np.median(BC,3)
 
         diam = round(min(F.shape[0:2]))
 
@@ -91,6 +73,26 @@ def main():
         seq = 0
         while seq < args.sequence_len:
             print("%d_%d" % (ti, seq))
+
+            # create background
+            bg = frms[start_frame + seq]    # use next frame in video as background
+            frmi = int(bg[-12:-4])
+            if frmi < 3:
+                continue
+            B = cv2.imread(bg)/255
+
+            bg0 = bg[:-12]+str(frmi-1).zfill(8) +bg[-4:]
+            bg00 = bg[:-12]+str(frmi-2).zfill(8) +bg[-4:]
+            B0 = cv2.imread(bg0)/255
+            B00 = cv2.imread(bg00)/255
+
+            BC = np.zeros([B.shape[0],B.shape[1],3,3])
+            BC[:,:,:,0] = B
+            BC[:,:,:,1] = B0
+            BC[:,:,:,2] = B00
+            BMED = np.median(BC,3)
+
+
             ## Generate random trajectories
             H = np.zeros(B.shape[0:2])
             rind = random.randint(0,9)
@@ -174,18 +176,18 @@ def main():
             # pdb.set_trace()
             fname = "%08d_%08d_" % (ti, seq)
             # if seq == 0:
-            #     imageio.imwrite(join(args.dataset_path,fname+"bgr.png"), (255*BMED).astype(np.uint8))
             #     imageio.imwrite(join(args.dataset_path,fname+"F.png"), (255*Fsave).astype(np.uint8))
             #     imageio.imwrite(join(args.dataset_path,fname+"M.png"), (255*M).astype(np.uint8))
+            # imageio.imwrite(join(args.dataset_path,fname+"bgr.png"), (255*BMED).astype(np.uint8))
             imageio.imwrite(join(args.dataset_path,fname+"im.png"), (255*im).astype(np.uint8))
-            imageio.imwrite(join(args.dataset_path,fname+"psf.png"), (255*(H/np.max(H))).astype(np.uint8))
+            # imageio.imwrite(join(args.dataset_path,fname+"psf.png"), (255*(H/np.max(H))).astype(np.uint8))
             imageio.imwrite(join(args.dataset_path,fname+"segmask.png"), (255*(SEGMASK/np.max(SEGMASK))).astype(np.uint8))
             
-            with open(join(args.dataset_path,fname+"traj.txt"), 'w') as fff:
-                for k1 in range(towrite.shape[0]):
-                    for k2 in range(towrite.shape[1]):
-                        fff.write('%.1f ' % towrite[k1,k2])
-                    fff.write('\n')
+            # with open(join(args.dataset_path,fname+"traj.txt"), 'w') as fff:
+            #     for k1 in range(towrite.shape[0]):
+            #         for k2 in range(towrite.shape[1]):
+            #             fff.write('%.1f ' % towrite[k1,k2])
+            #         fff.write('\n')
             seq += 1
         ti = ti + 1
 

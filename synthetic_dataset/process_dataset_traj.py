@@ -71,6 +71,7 @@ def main():
         FM = F*M3
 
         seq = 0
+        ori = random.uniform(0,2*math.pi)
         while seq < args.sequence_len:
             print("%d_%d" % (ti, seq))
 
@@ -108,14 +109,13 @@ def main():
                 prc = random.uniform(0.15,0.85)
                 ori0 = []
                 for pr1 in [prc, 1-prc]:
-                    while True:
-                        ori = random.uniform(0,2*math.pi)
-                        if ori0 == []:
+                    if ori0 != []:
+                        while True:
+                            ori = random.uniform(0,2*math.pi)
+                            delta = np.mod(ori - ori0 + 3*math.pi, 2*math.pi) - math.pi
+                            if np.abs(delta) < math.pi/6 or np.abs(delta) > 5*math.pi/6: ## if < 30 or > 150 degrees
+                                continue
                             break
-                        delta = np.mod(ori - ori0 + 3*math.pi, 2*math.pi) - math.pi
-                        if np.abs(delta) < math.pi/6 or np.abs(delta) > 5*math.pi/6: ## if < 30 or > 150 degrees
-                            continue
-                        break
 
                     end = [round(start[0] + math.sin(ori)*tlen*pr1), round(start[1] + math.cos(ori)*tlen*pr1)]
                     rr, cc, val = line_aa(start[0], start[1], end[0], end[1])
@@ -133,13 +133,11 @@ def main():
                     ori0 = ori
             elif rind == 1:
                 ## generate parabola
-                ori = random.uniform(0,2*math.pi)
                 end = [round(start[0] + math.sin(ori)*tlen), round(start[1] + math.cos(ori)*tlen)]
                 towrite[:,1] = np.array(end) - np.array(start) 
                 towrite[:,2] = [random.uniform(10.0,20.0), random.uniform(10.0,20.0)] 
                 H = renderTraj(towrite, H) 
             else:
-                ori = random.uniform(0,2*math.pi)
                 end = [round(start[0] + math.sin(ori)*tlen), round(start[1] + math.cos(ori)*tlen)]
                 rr, cc, val = line_aa(start[0], start[1], end[0], end[1])
                 valid = np.logical_and(np.logical_and(rr < H.shape[0], cc < H.shape[1]), np.logical_and(rr > 0, cc > 0))
@@ -149,11 +147,12 @@ def main():
                 H[rr, cc] = val    
                 towrite[:,1] = np.array(end) - np.array(start) 
 
-            if np.sum(H) < tlen:
-                continue
+            # if np.sum(H) < tlen:
+            #     continue
             prev_end = end
             SEGMASK = psf_to_full_mask(H, M)
-            H = H/np.sum(H)
+            if np.sum(H) > 0:
+                H = H/np.sum(H)
             ########
 
 
@@ -181,7 +180,7 @@ def main():
             # imageio.imwrite(join(args.dataset_path,fname+"bgr.png"), (255*BMED).astype(np.uint8))
             imageio.imwrite(join(args.dataset_path,fname+"im.png"), (255*im).astype(np.uint8))
             # imageio.imwrite(join(args.dataset_path,fname+"psf.png"), (255*(H/np.max(H))).astype(np.uint8))
-            imageio.imwrite(join(args.dataset_path,fname+"segmask.png"), (255*(SEGMASK/np.max(SEGMASK))).astype(np.uint8))
+            imageio.imwrite(join(args.dataset_path,fname+"segmask.png"), (255*(SEGMASK/max(np.max(SEGMASK),1))).astype(np.uint8))
             
             # with open(join(args.dataset_path,fname+"traj.txt"), 'w') as fff:
             #     for k1 in range(towrite.shape[0]):
@@ -238,6 +237,8 @@ def psf_to_full_mask(psf, disk):
         endy = int(starty + diskshape[1])
         new_layer[startx:endx, starty:endy] = disk    # place a disk centered at point on psf line 
         layers.append(new_layer)
+    if layers == []:
+        return psf
     full_mask_tiled = np.maximum.reduce(layers)     # combine all disks
     full_mask = full_mask_tiled[imshape[0]:2*imshape[0], imshape[1]:2*imshape[1]]   # remove "out of bounds" padding
     return full_mask

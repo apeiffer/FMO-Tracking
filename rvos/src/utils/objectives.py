@@ -1,5 +1,5 @@
 import torch
-from utils.hungarian import softIoU, MaskedNLL, StableBalancedMaskedBCE
+from utils.hungarian import softIoU, MaskedNLL, StableBalancedMaskedBCE, softIoUWithCCPenalty
 import torch.nn as nn
 
 
@@ -26,8 +26,8 @@ class softIoULoss(nn.Module):
 
     def __init__(self):
         super(softIoULoss,self).__init__()
-    def forward(self, y_true, y_pred, sw):
-        costs = softIoU(y_true,y_pred).view(-1,1)
+    def forward(self, y_true, y_pred, sw, height, width):
+        costs = softIoUWithCCPenalty(y_true,y_pred, height, width).view(-1,1)
         if (sw.data > 0).any():
             costs = torch.mean(torch.masked_select(costs,sw.byte()))
         else:

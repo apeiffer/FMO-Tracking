@@ -4,6 +4,7 @@ import torch.nn as nn
 from munkres import Munkres
 import numpy as np
 import time
+import scipy
 
 torch.manual_seed(0)
 
@@ -83,6 +84,41 @@ def softIoU(target, out, e=1e-6):
     cost = (1 - iou)
 
     return cost.squeeze()
+
+
+def softIoUWithCCPenalty(target, out, height, width, e=1e-6):
+    """
+    Soft IoU with penalty for more than 1 Connected Component
+    Args:
+        target: A Variable containing a LongTensor of size
+            (batch, N) which contains the true binary mask.
+        out: A Variable containing a FloatTensor of size
+            (batch, N) which contains the logits for each pixel in the output mask.
+        sw: A Variable containing a LongTensor of size (batch,)
+            which contains the mask to apply to each element in a batch.
+    Returns:
+        loss: Sum of losses with applied sample weight
+    """
+
+    out = torch.sigmoid(out)
+
+    num = (out*target).sum(1,True)
+    den = (out+target-out*target).sum(1,True) + e
+    iou = num / den
+
+    cost = (1 - iou)
+    loss = cost.squeeze()
+
+    num_masks = out.size()[0]
+    for i in range(num_masks):
+        mask_flat = out[i].cpu().data.numpy().astype(int)
+        mask_reshaped = np.reshape(mask_flat, (height, width))
+        _, cc = scipy.ndimage.label(mask_reshaped)
+        loss[i] += (max(cc, 1) - 1)
+
+    return loss
+
+
 
 def match(masks, overlaps):
     """

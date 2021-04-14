@@ -171,7 +171,9 @@ def runIter(args, encoder, decoder, x, y_mask, sw_mask,
     
    
     # loss is masked with sw_mask
-    loss_mask_iou = mask_siou(y_mask_perm.view(-1,y_mask_perm.size()[-1]),out_masks.view(-1,out_masks.size()[-1]), sw_mask.view(-1,1))
+    mask_height = x.shape[-2]
+    mask_width = x.shape[-1]
+    loss_mask_iou = mask_siou(y_mask_perm.view(-1,y_mask_perm.size()[-1]),out_masks.view(-1,out_masks.size()[-1]), sw_mask.view(-1,1), mask_height, mask_width)
     loss_mask_iou = torch.mean(loss_mask_iou)
 
     # total loss is the weighted sum of all terms

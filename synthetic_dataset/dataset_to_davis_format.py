@@ -164,3 +164,27 @@ def resize_dataset(db_directory, dataset):
         im_resized.save(os.path.join(db_directory, new_dataset, folder, seq, file))
 
   shutil.copytree(os.path.join(db_directory, dataset, 'ImageSets'), os.path.join(db_directory, new_dataset, 'ImageSets'))
+
+
+def reorder_for_trajectory(input_dir, output_dir):
+	os.mkdir(output_dir)
+	for folder in ['Annotations', 'JPEGImages']:
+		os.mkdir(os.path.join(output_dir, folder))
+		for seq in os.listdir(os.path.join(input_dir, folder)):
+			os.mkdir(os.path.join(output_dir, folder, seq))
+			seq_len = len(os.listdir(os.path.join(input_dir, folder, seq)))
+			for i, file in enumerate(sorted(os.listdir(os.path.join(input_dir, folder, seq)))):
+				if folder == 'Annotations':
+					if i == 0:
+						continue
+					filenum = int(file[:5])
+					new_filename = str(filenum-1).zfill(5) + '.png'
+					shutil.copyfile(os.path.join(input_dir, folder, seq, file), os.path.join(output_dir, folder, seq, new_filename))
+				elif folder == 'JPEGImages':
+					if i == seq_len-1:
+						continue
+					shutil.copyfile(os.path.join(input_dir, folder, seq, file), os.path.join(output_dir, folder, seq, file))
+	shutil.copytree(os.path.join(input_dir, 'ImageSets'), os.path.join(output_dir, 'ImageSets'))
+
+
+

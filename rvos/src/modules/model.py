@@ -38,7 +38,8 @@ class FeatureExtractor(nn.Module):
 
         self.hidden_size = args.hidden_size
         self.kernel_size = args.kernel_size
-        self.padding = 0 if self.kernel_size == 1 else 1
+        # self.padding = 0 if self.kernel_size == 1 else 1
+        self.padding = int((self.kernel_size - 1) / 2)
 
         self.sk5 = nn.Conv2d(skip_dims_in[0],int(self.hidden_size),self.kernel_size,padding=self.padding)
         self.sk4 = nn.Conv2d(skip_dims_in[1],int(self.hidden_size),self.kernel_size,padding=self.padding)
@@ -77,7 +78,8 @@ class RSIS(nn.Module):
         super(RSIS,self).__init__()
         self.hidden_size = args.hidden_size
         self.kernel_size = args.kernel_size
-        padding = 0 if self.kernel_size == 1 else 1
+        # padding = 0 if self.kernel_size == 1 else 1
+        padding = int((self.kernel_size - 1) / 2)
 
         self.dropout = args.dropout
         self.skip_mode = args.skip_mode
@@ -177,7 +179,8 @@ class RSISMask(nn.Module):
         super(RSISMask,self).__init__()
         self.hidden_size = args.hidden_size
         self.kernel_size = args.kernel_size
-        padding = 0 if self.kernel_size == 1 else 1
+        # padding = 0 if self.kernel_size == 1 else 1
+        padding = int((self.kernel_size - 1) / 2)
 
         self.dropout = args.dropout
         self.skip_mode = args.skip_mode

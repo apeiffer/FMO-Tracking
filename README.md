@@ -1,4 +1,6 @@
 # FMO-Tracking
+## Kristi Bushman, Clara Cardoso Ferreira, Avery Peiffer
+## Spring 2021
 The goal of this Computer Vision Research Project is to track and predict trajectory of Fast Moving Objects (FMOs). The main program is based on the RVOS code base, which is a temporal and spatial machine learning method used to segment videos. The original code can be found on the following repository: https://github.com/imatge-upc/rvos/tree/12016db67a18e4c4dea3f42f5b3c0b2623761c5b.
 
 ## Installation Notes
